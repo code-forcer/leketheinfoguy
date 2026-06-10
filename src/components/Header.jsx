@@ -11,11 +11,13 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useState } from "react";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { FaBars, FaTimes, FaUser, FaSignOutAlt } from "react-icons/fa";
 import ColorModeToggle from "@/components/ColorModeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -71,19 +73,77 @@ export default function Header() {
                 {item.name}
               </Button>
             ))}
-            <Button
-              colorScheme="blue"
-              as="a"
-              href="/write"
-              ml={2}
-              boxShadow="md"
-              color="white"
-              bg="blue.500"
-              _hover={{ boxShadow: "lg", transform: "translateY(-1px)" }}
-              transition="all 0.2s"
-            >
-              Share Your Story
-            </Button>
+
+            {/* Auth Buttons */}
+            {!loading && (
+              <>
+                {user ? (
+                  <HStack spacing={2} ml={2}>
+                    <Flex
+                      align="center"
+                      gap={2}
+                      px={3}
+                      py={1.5}
+                      bg={{ base: "blue.50", _dark: "blue.900" }}
+                      rounded="full"
+                    >
+                      <Box
+                        w={7}
+                        h={7}
+                        rounded="full"
+                        bg="blue.500"
+                        color="white"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        fontSize="xs"
+                        fontWeight="bold"
+                      >
+                        {user.name?.charAt(0).toUpperCase()}
+                      </Box>
+                      <Text fontSize="sm" fontWeight="medium" color={{ base: "blue.700", _dark: "blue.200" }}>
+                        {user.name}
+                      </Text>
+                    </Flex>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      color="red.400"
+                      _hover={{ bg: "red.50", color: "red.500" }}
+                      onClick={logout}
+                    >
+                      <FaSignOutAlt />
+                    </Button>
+                  </HStack>
+                ) : (
+                  <HStack spacing={2} ml={2}>
+                    <Button
+                      variant="ghost"
+                      as="a"
+                      href="/login"
+                      color={{ base: "blue.700", _dark: "blue.200" }}
+                      fontWeight="medium"
+                      _hover={{ bg: { base: "blue.50", _dark: "blue.900" } }}
+                    >
+                      Log In
+                    </Button>
+                    <Button
+                      colorScheme="blue"
+                      as="a"
+                      href="/register"
+                      boxShadow="md"
+                      color="white"
+                      bg="blue.500"
+                      _hover={{ boxShadow: "lg", transform: "translateY(-1px)" }}
+                      transition="all 0.2s"
+                    >
+                      Sign Up
+                    </Button>
+                  </HStack>
+                )}
+              </>
+            )}
+
             <ColorModeToggle />
           </HStack>
 
@@ -106,7 +166,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <Box
-          maxH={isOpen ? "500px" : "0"}
+          maxH={isOpen ? "600px" : "0"}
           overflow="hidden"
           transition="max-height 0.3s ease, opacity 0.3s ease"
           opacity={isOpen ? 1 : 0}
@@ -136,14 +196,65 @@ export default function Header() {
                 {item.name}
               </Button>
             ))}
-            <Button
-              colorScheme="blue"
-              as="a"
-              href="/write"
-              onClick={() => setIsOpen(false)}
-            >
-              Share Your Story
-            </Button>
+
+            {/* Mobile Auth */}
+            {!loading && (
+              <>
+                {user ? (
+                  <>
+                    <Flex align="center" gap={2} px={4} py={2}>
+                      <Box
+                        w={7}
+                        h={7}
+                        rounded="full"
+                        bg="blue.500"
+                        color="white"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        fontSize="xs"
+                        fontWeight="bold"
+                      >
+                        {user.name?.charAt(0).toUpperCase()}
+                      </Box>
+                      <Text fontSize="sm" fontWeight="medium" color={{ base: "blue.700", _dark: "blue.200" }}>
+                        {user.name}
+                      </Text>
+                    </Flex>
+                    <Button
+                      variant="ghost"
+                      justifyContent="flex-start"
+                      color="red.400"
+                      _hover={{ bg: "red.50" }}
+                      onClick={() => { logout(); setIsOpen(false); }}
+                    >
+                      <FaSignOutAlt style={{ marginRight: 8 }} /> Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      as="a"
+                      href="/login"
+                      justifyContent="flex-start"
+                      onClick={() => setIsOpen(false)}
+                      color={{ base: "blue.700", _dark: "blue.200" }}
+                    >
+                      Log In
+                    </Button>
+                    <Button
+                      colorScheme="blue"
+                      as="a"
+                      href="/register"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Sign Up
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
           </VStack>
         </Box>
       </Container>

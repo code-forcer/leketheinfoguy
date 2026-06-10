@@ -2,6 +2,7 @@
 
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default function Providers({ children }) {
   return (
@@ -9,7 +10,9 @@ export default function Providers({ children }) {
     <ChakraProvider value={defaultSystem}>
       {/* ThemeProvider is required for Dark Mode to work in v3 */}
       <ThemeProvider attribute="class" disableTransitionOnChange>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </ThemeProvider>
     </ChakraProvider>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -12,9 +13,88 @@ import {
   Flex,
   Icon,
 } from "@chakra-ui/react";
-import { FaPaperPlane, FaLock } from "react-icons/fa";
+import { FaPaperPlane, FaLock, FaCheckCircle } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
+import { createStory } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export default function WritePage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("win");
+  const [mood, setMood] = useState("hopeful");
+  const [anonymous, setAnonymous] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      await createStory({ title, content, category, mood, anonymous });
+      setSuccess(true);
+      // Reset form
+      setTitle("");
+      setContent("");
+      setCategory("win");
+      setMood("hopeful");
+      setAnonymous(true);
+
+      // Redirect to stories after a brief pause
+      setTimeout(() => {
+        router.push("/stories");
+      }, 2000);
+    } catch (err) {
+      setError(err.message || "Failed to publish story. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show nothing while checking auth
+  if (authLoading) {
+    return (
+      <Box bg={{ base: "gray.50", _dark: "gray.900" }} minH="100vh" display="flex" alignItems="center" justifyContent="center">
+        <Text color={{ base: "gray.600", _dark: "gray.400" }}>Loading...</Text>
+      </Box>
+    );
+  }
+
+  // Success state
+  if (success) {
+    return (
+      <Box bg={{ base: "gray.50", _dark: "gray.900" }} minH="100vh" py={{ base: 10, md: 20 }}>
+        <Container maxW="3xl">
+          <VStack spacing={6} textAlign="center" py={20}>
+            <Icon as={FaCheckCircle} boxSize={16} color="green.400" />
+            <Heading size="xl" color={{ base: "gray.800", _dark: "white" }}>
+              Story Published! 🎉
+            </Heading>
+            <Text color={{ base: "gray.600", _dark: "gray.400" }} fontSize="lg">
+              Thank you for sharing. Your story is now live and might help someone who needs it.
+            </Text>
+            <Text color="gray.500" fontSize="sm">
+              Redirecting to stories...
+            </Text>
+          </VStack>
+        </Container>
+      </Box>
+    );
+  }
+
   return (
     <>
       <Box 
@@ -35,8 +115,17 @@ export default function WritePage() {
               </Text>
             </VStack>
 
+            {/* Error */}
+            {error && (
+              <Box p={4} bg="red.50" color="red.600" rounded="lg" fontSize="sm" fontWeight="medium">
+                {error}
+              </Box>
+            )}
+
             {/* Form Card */}
             <Box
+              as="form"
+              onSubmit={handleSubmit}
               bg={{ base: "white", _dark: "gray.800" }}
               p={{ base: 6, md: 8 }}
               shadow="lg"
@@ -56,6 +145,9 @@ export default function WritePage() {
                     bg={{ base: "gray.50", _dark: "gray.700" }}
                     border="1px solid"
                     borderColor={{ base: "gray.200", _dark: "gray.600" }}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
                   />
                 </Box>
 
@@ -77,6 +169,8 @@ export default function WritePage() {
                       borderColor={{ base: "gray.200", _dark: "gray.600" }}
                       color={{ base: "gray.800", _dark: "white" }}
                       _focus={{ outline: "none", borderColor: "blue.400" }}
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
                     >
                       <option value="win">Win & Celebration</option>
                       <option value="worry">Worry & Anxiety</option>
@@ -101,6 +195,8 @@ export default function WritePage() {
                       borderColor={{ base: "gray.200", _dark: "gray.600" }}
                       color={{ base: "gray.800", _dark: "white" }}
                       _focus={{ outline: "none", borderColor: "blue.400" }}
+                      value={mood}
+                      onChange={(e) => setMood(e.target.value)}
                     >
                       <option value="hopeful">Hopeful</option>
                       <option value="sad">Sad / Melancholy</option>
@@ -123,6 +219,9 @@ export default function WritePage() {
                     bg={{ base: "gray.50", _dark: "gray.700" }}
                     border="1px solid"
                     borderColor={{ base: "gray.200", _dark: "gray.600" }}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    required
                   />
                 </Box>
 
@@ -150,7 +249,8 @@ export default function WritePage() {
                   <Box 
                     as="input" 
                     type="checkbox" 
-                    defaultChecked 
+                    checked={anonymous}
+                    onChange={(e) => setAnonymous(e.target.checked)}
                     w={5} 
                     h={5} 
                     accentColor="#3182ce"
@@ -159,6 +259,7 @@ export default function WritePage() {
 
                 {/* Submit Button */}
                 <Button
+                  type="submit"
                   size="lg"
                   w="full"
                   bg="blue.500"
@@ -166,8 +267,11 @@ export default function WritePage() {
                   _hover={{ bg: "blue.600" }}
                   py={8}
                   fontSize="xl"
+                  disabled={loading}
+                  loading={loading}
                 >
-                  <Box as="span" mr={2}><FaPaperPlane /></Box> Publish Story
+                  <Box as="span" mr={2}><FaPaperPlane /></Box> 
+                  {loading ? "Publishing..." : "Publish Story"}
                 </Button>
 
               </VStack>

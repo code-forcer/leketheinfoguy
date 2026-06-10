@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -9,22 +10,34 @@ import {
   VStack,
   Flex,
   Icon,
+  Spinner,
 } from "@chakra-ui/react";
 import { FaLightbulb, FaQuoteLeft } from "react-icons/fa";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-
-const lessons = [
-  { quote: "Success is not final, failure is not fatal.", author: "Anonymous User", context: "After failing my exams" },
-  { quote: "You cannot heal in the same environment that made you sick.", author: "Sarah K.", context: "On leaving a toxic job" },
-  { quote: "It is okay to outgrow people who aren't growing.", author: "Mike T.", context: "Losing childhood friends" },
-  { quote: "Worrying implies we don't trust God's plan.", author: "Leke", context: "Dealing with anxiety" },
-];
+import { getLessons } from "@/lib/api";
 
 export default function LessonsPage() {
+  const [lessons, setLessons] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchLessons() {
+      try {
+        const data = await getLessons();
+        setLessons(data.lessons || []);
+      } catch (err) {
+        console.error("Failed to fetch lessons:", err);
+        // Fallback to empty array
+        setLessons([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLessons();
+  }, []);
+
   return (
     <>
-      <Header />
       <Box bg={{ base: "gray.50", _dark: "black" }} minH="100vh" py={16}>
         <Container maxW="7xl">
           <VStack spacing={12}>
@@ -37,43 +50,64 @@ export default function LessonsPage() {
               </Text>
             </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} w="full">
-              {lessons.map((lesson, i) => (
-                <Flex 
-                  key={i}
-                  direction="column"
-                  p={10}
-                  bg={{ base: "white", _dark: "gray.900" }}
-                  rounded="3xl"
-                  position="relative"
-                  shadow="md"
-                >
-                  <Icon as={FaQuoteLeft} color="gray.200" boxSize={10} position="absolute" top={6} left={6} />
-                  
-                  <Text 
-                    fontSize="2xl" 
-                    fontWeight="medium" 
-                    color={{ base: "gray.800", _dark: "white" }} 
-                    fontStyle="italic"
-                    zIndex={1}
-                    mb={6}
-                    mt={4}
+            {/* Loading State */}
+            {loading && (
+              <Flex justify="center" py={10}>
+                <VStack spacing={4}>
+                  <Spinner size="xl" color="blue.500" />
+                  <Text color="gray.500">Loading wisdom...</Text>
+                </VStack>
+              </Flex>
+            )}
+
+            {/* Empty State */}
+            {!loading && lessons.length === 0 && (
+              <Box textAlign="center" py={10}>
+                <Text color="gray.500" fontSize="lg">
+                  No lessons shared yet. Be the first to contribute your wisdom!
+                </Text>
+              </Box>
+            )}
+
+            {/* Lessons Grid */}
+            {!loading && lessons.length > 0 && (
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} w="full">
+                {lessons.map((lesson) => (
+                  <Flex 
+                    key={lesson.id}
+                    direction="column"
+                    p={10}
+                    bg={{ base: "white", _dark: "gray.900" }}
+                    rounded="3xl"
+                    position="relative"
+                    shadow="md"
                   >
-                    "{lesson.quote}"
-                  </Text>
-                  
-                  <Box mt="auto" borderTop="1px solid" borderColor="gray.100" pt={4}>
-                    <Text fontWeight="bold" color="blue.500">{lesson.author}</Text>
-                    <Text fontSize="sm" color="gray.500">Context: {lesson.context}</Text>
-                  </Box>
-                </Flex>
-              ))}
-            </SimpleGrid>
+                    <Icon as={FaQuoteLeft} color="gray.200" boxSize={10} position="absolute" top={6} left={6} />
+                    
+                    <Text 
+                      fontSize="2xl" 
+                      fontWeight="medium" 
+                      color={{ base: "gray.800", _dark: "white" }} 
+                      fontStyle="italic"
+                      zIndex={1}
+                      mb={6}
+                      mt={4}
+                    >
+                      "{lesson.quote}"
+                    </Text>
+                    
+                    <Box mt="auto" borderTop="1px solid" borderColor="gray.100" pt={4}>
+                      <Text fontWeight="bold" color="blue.500">{lesson.author}</Text>
+                      <Text fontSize="sm" color="gray.500">Context: {lesson.context}</Text>
+                    </Box>
+                  </Flex>
+                ))}
+              </SimpleGrid>
+            )}
 
           </VStack>
         </Container>
       </Box>
-      <Footer />
     </>
   );
 }
